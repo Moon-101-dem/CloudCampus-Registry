@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en" ng-app="myApp">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enterprise Student Analytics & Registry</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="student.css">
+  
+  </head>
+
+  <body ng-controller="studentCtrl" ng-class="{'light-mode': !isDarkMode}">
+    <div class="theme-switch-bar">
+      <div class="portal-title">
+        <h1><i class="fa-solid fa-shield-halved"></i> CloudCampus Registry</h1>
+      </div>
+      <button class="theme-btn" ng-click="toggleTheme()">
+        <i class="fa-solid" ng-class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+        <span>{{isDarkMode ? 'Light Focus View' : 'Deep Space View'}}</span>
+      </button>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-icon"><i class="fa-solid fa-spinner"></i></div>
+        <div class="metric-info">
+          <display-val>{{calculateCompletion()}}%</display-val>
+          <label-val>Profile Status Completion</label-val>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon"><i class="fa-solid fa-calendar-days"></i></div>
+        <div class="metric-info">
+          <display-val>{{expectedGraduationYear || '----'}}</display-val>
+          <label-val>Expected Graduation</label-val>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">
+          <i class="fa-solid fa-envelope-open-text"></i>
+        </div>
+        <div class="metric-info">
+          <display-val style="font-size: 12px; font-family: monospace"
+            >{{generatedEmail || 'Not Configured'}}</display-val
+          >
+          <label-val>Allocated Campus Alias</label-val>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="form-section">
+        <div>
+          <h2>
+            <i class="fa-solid fa-square-plus"></i> Management Input Parameters
+          </h2>
+
+          <div class="form-row two-col">
+            <div class="form-group">
+              <label>Legal Student Name</label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  ng-model="studentName"
+                  placeholder="Alex Morgan"
+                />
+                <i class="fa-solid fa-signature"></i>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Unique Roll Reference ID</label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  ng-model="rollNo"
+                  ng-change="parseGraduation()"
+                  placeholder="2026CS1042"
+                />
+                <i class="fa-solid fa-fingerprint"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row two-col">
+            <div class="form-group">
+              <label>Current Status Tier</label>
+              <div class="input-wrapper">
+                <select ng-model="enrollmentStatus">
+                  <option value="" hidden>Select Status Mode</option>
+                  <option value="Active Scholar">Active Scholar</option>
+                  <option value="On Probation">On Probation</option>
+                  <option value="Sabbatical Approved">
+                    Sabbatical Approved
+                  </option>
+                </select>
+                <i class="fa-solid fa-chart-line"></i>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>System Classification Domain</label>
+              <div class="input-wrapper">
+                <select ng-model="degreeType">
+                  <option value="" hidden>Select Domain Degree</option>
+                  <option value="B.Tech (Undergraduate)">
+                    B.Tech (Undergraduate)
+                  </option>
+                  <option value="M.Tech (Postgraduate)">
+                    M.Tech (Postgraduate)
+                  </option>
+                  <option value="Ph.D. Research Candidate">
+                    Ph.D. Research Candidate
+                  </option>
+                </select>
+                <i class="fa-solid fa-award"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Specialized Core Course Program</label>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                ng-model="course"
+                placeholder="Computer Science & Engineering"
+              />
+              <i class="fa-solid fa-code-branch"></i>
+            </div>
+          </div>
+
+          <div class="form-row two-col">
+            <div class="form-group">
+              <label>Governing Department</label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  ng-model="department"
+                  placeholder="School of Engineering"
+                />
+                <i class="fa-solid fa-network-wired"></i>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Parent Entity / University</label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  ng-model="college"
+                  placeholder="Stanford University"
+                />
+                <i class="fa-solid fa-landmark-flag"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label>Data Verification Processing Integrity Matrix</label>
+          <div class="progress-container">
+            <div
+              class="progress-bar"
+              ng-style="{ 'width': calculateCompletion() + '%' }"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="display-section">
+        <div>
+          <h2>
+            <i class="fa-solid fa-id-card-clip"></i> Secure Node Dossier
+            Identity
+          </h2>
+
+          <div class="preview-card">
+            <div class="card-header">
+              <div class="student-badge">
+                {{studentName ? studentName.charAt(0).toUpperCase() : "🔒"}}
+              </div>
+              <div class="card-title-block">
+                <h3>{{studentName || "Identity Matrix Unassigned"}}</h3>
+                <p>
+                  <i
+                    class="fa-solid fa-circle-dot"
+                    ng-style="{'color': enrollmentStatus ? '#14b8a6' : '#475569'}"
+                  ></i>
+                  {{enrollmentStatus || "Awaiting Status Field Assignment"}}
+                </p>
+              </div>
+            </div>
+
+            <div class="preview-grid">
+              <div class="preview-item">
+                <div class="preview-label">Access Roll UID</div>
+                <div class="preview-value" ng-class="{'empty': !rollNo}">
+                  {{rollNo || "Awaiting Data String"}}
+                </div>
+              </div>
+
+              <div class="preview-item">
+                <div class="preview-label">Classification</div>
+                <div class="preview-value" ng-class="{'empty': !degreeType}">
+                  {{degreeType || "Awaiting Choice Selection"}}
+                </div>
+              </div>
+
+              <div class="preview-item full-width">
+                <div class="preview-label">Target Field Program Area</div>
+                <div class="preview-value" ng-class="{'empty': !course}">
+                  {{course || "Undefined Academic Discipline Parameters"}}
+                </div>
+              </div>
+
+              <div class="preview-item">
+                <div class="preview-label">Department Hub</div>
+                <div class="preview-value" ng-class="{'empty': !department}">
+                  {{department || "Core Cluster Blank"}}
+                </div>
+              </div>
+
+              <div class="preview-item">
+                <div class="preview-label">Base Institution</div>
+                <div class="preview-value" ng-class="{'empty': !college}">
+                  {{college || "System Unanchored"}}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-tray">
+          <button
+            class="btn-action btn-secondary"
+            ng-click="flushPortalFields()"
+          >
+            <i class="fa-solid fa-trash-arrow-up"></i>Clear Details
+          </button>
+          <button class="btn-action btn-primary" ng-click="triggerMockPrint()">
+            <i class="fa-solid fa-print"></i> Export ID
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var app = angular.module("myApp", []);
+
+      app.controller("studentCtrl", function ($scope, $window) {
+        // Configuration initialization mappings
+        $scope.isDarkMode = true;
+
+        $scope.toggleTheme = function () {
+          $scope.isDarkMode = !$scope.isDarkMode;
+        };
+
+        // Enhanced Data Models mapping
+        $scope.studentName = "";
+        $scope.rollNo = "";
+        $scope.enrollmentStatus = "";
+        $scope.degreeType = "";
+        $scope.course = "";
+        $scope.department = "";
+        $scope.college = "";
+
+        // Custom Dynamic Calculations Expressions
+        $scope.expectedGraduationYear = "";
+        $scope.generatedEmail = "";
+
+        // Dynamic Regex Parser for estimating data from Roll ID
+        $scope.parseGraduation = function () {
+          if ($scope.rollNo) {
+            var patterns = $scope.rollNo.match(/\d{4}/);
+            if (patterns && patterns[0]) {
+              var parsedYear = parseInt(patterns[0]);
+              $scope.expectedGraduationYear = parsedYear + 4;
+            } else {
+              $scope.expectedGraduationYear = "";
+            }
+          } else {
+            $scope.expectedGraduationYear = "";
+          }
+        };
+
+        // Watch parameters dynamically to evaluate internal calculated fields
+        $scope.$watch("rollNo", function (newVal) {
+          if (newVal) {
+            var safeSlug = newVal.toLowerCase().replace(/\s+/g, ".");
+            $scope.generatedEmail = safeSlug + "@paruluniversity.ac.in";
+          } else {
+            $scope.generatedEmail = "";
+          }
+        });
+
+        // Dynamic Percentage Calculator matrix evaluation
+        $scope.calculateCompletion = function () {
+          var trackedFields = [
+            $scope.studentName,
+            $scope.rollNo,
+            $scope.enrollmentStatus,
+            $scope.degreeType,
+            $scope.course,
+            $scope.department,
+            $scope.college,
+          ];
+          var completeUnits = 0;
+
+          angular.forEach(trackedFields, function (val) {
+            if (val && val.trim() !== "") {
+              completeUnits++;
+            }
+          });
+
+          return Math.round((completeUnits / trackedFields.length) * 100);
+        };
+
+        // Reset Buffer handler execution
+        $scope.flushPortalFields = function () {
+          $scope.studentName = "";
+          $scope.rollNo = "";
+          $scope.enrollmentStatus = "";
+          $scope.degreeType = "";
+          $scope.course = "";
+          $scope.department = "";
+          $scope.college = "";
+          $scope.expectedGraduationYear = "";
+          $scope.generatedEmail = "";
+        };
+
+        // Secure validation and print triggers
+        $scope.triggerMockPrint = function () {
+          if ($scope.calculateCompletion() < 30) {
+            $window.alert(
+              "Alert: Internal profile payload must be greater than 30% configuration completion before executing print layout tasks.",
+            );
+          } else {
+            $window.print();
+          }
+        };
+      });
+    </script>
+  </body>
+</html>
